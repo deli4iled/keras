@@ -118,9 +118,11 @@ def create_model(layers, phase, input_dim, debug=False):
                 dim = input_dim
             else:
                 dim = get_data_dim(layers[network_input])
+            #name = 'input_' + name
             net_node[layer_nb] = Input(shape=dim, name=name)
         #other  cases
         else:
+          
             
             print("len(inputs_to[layer_nb])", len(inputs_to[layer_nb]))
             input_layers = [None]*(len(inputs_to[layer_nb]))
@@ -135,10 +137,10 @@ def create_model(layers, phase, input_dim, debug=False):
             print("inputs_to[layer_nb]", inputs_to[layer_nb][0])
             input_layer_names = []
             for input_layer in inputs_to[layer_nb]:
-                if input_layer in inputs and in_deploy_mode:
-                    input_layer_names.append('input_' + layers[input_layer].name)
-                else:
-                    input_layer_names.append(layers[input_layer].name)
+                #if input_layer in inputs and in_deploy_mode:
+                #input_layer_names.append('input_' + layers[input_layer].name)
+                #else:
+                input_layer_names.append(layers[input_layer].name)
                     
 
             if type_of_layer == 'concat':
@@ -148,6 +150,7 @@ def create_model(layers, phase, input_dim, debug=False):
                 print("input_layers", type(input_layers))
                 print("input_layer_names", input_layer_names)
                 net_node[layer_nb] =  merge(input_layers, mode='concat', concat_axis=1, name=name)
+                #model.add_node(Activation('linear'), name=name, inputs=input_layer_names, concat_axis=axis)
                 #net_node[layer_nb] =  Activation('linear')(input_layers)
                 
             elif type_of_layer == 'convolution':
@@ -552,13 +555,26 @@ def convert_weights(param_layers, v='V1', debug=False):
 
     return weights
 
-
+import pickle
 def load_weights(model, weights):
+    model.summary()
     for layer in model.layers:
-        if weights.has_key(layer):
-            model.nodes[layer].set_weights(weights[layer])
-        else:
-            print("Layer non trovato")
-            print("layer", layer)
+        #attrs = vars(layer)
+        #print ', '.join("%s: %s" % item for item in attrs.items())
+        if weights.has_key(layer.name):
+            #print("weight prima", model.get_layer(layer.name).get_weights())
+            model.get_layer(layer.name).set_weights(weights[layer.name])
+            #model.nodes[layer].set_weights(weights[layer])
+            #print("weight dopo", model.get_layer(layer.name).get_weights())
+            #print("Layer trovato")
+            print("layer", layer.name)
+            if layer.name == "inception_3a/1x1":
+                output = open('inception_3a_1x1_weights.pkl', 'wb')
+                pickle.dump( model.get_layer(layer.name).get_weights(), output)
+                output.close()
+              
+        #else:
+        #    print("Layer non trovato")
+            
 
 

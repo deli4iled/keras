@@ -37,7 +37,12 @@ if __name__ == "__main__":
     model = model_from_json(open('models/Keras_model_structure.json').read())
     # Load model weights
     model.load_weights('models/Keras_model_weights.h5') 
-
+    
+    import pickle
+    output = open('loss3_classifier.pkl', 'wb')
+    pickle.dump( model.get_layer("loss3/classifier").get_weights(), output)
+    output.close()
+                
     # Compile converted model
     print "Compiling model."
     sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     for input in ['data']:
         in_data[input] = im
     print("im.shape", im.shape)
-    out = model.predict(im)
+    out = model.predict(in_data)
 
     # Load ImageNet classes file
     classes = []
@@ -71,8 +76,13 @@ if __name__ == "__main__":
         for line in list_:
             classes.append(line.rstrip('\n'))
 
-    print(out)
+    #print(out)
     print("len(out)", len(out))
+    
+    np.savetxt("out.txt", out[0])
+    
+                
     print classes[np.argmax(out[0])]
     print classes[np.argmax(out[1])]
     print classes[np.argmax(out[2])]
+
