@@ -1,6 +1,7 @@
 from ..engine import Layer, InputSpec
 from .. import initializations
 from .. import backend as K
+import theano.tensor as T
 
 
 class LRN2D(Layer):
@@ -18,6 +19,25 @@ class LRN2D(Layer):
         if n % 2 == 0:
             raise NotImplementedError("Only works with odd n")
 
+    def build(self, input_shape):
+        print("---------------------------------------build-------------------------------------")
+      
+    def call(self, x, mask=None):
+        X = x
+        input_dim = X.shape
+        half_n = self.n // 2
+        input_sqr = T.sqr(X)
+        b, ch, r, c = input_dim
+        extra_channels = T.alloc(0., b, ch + 2*half_n, r, c)
+        input_sqr = T.set_subtensor(extra_channels[:, half_n:half_n+ch, :, :],input_sqr)
+        scale = self.k
+        norm_alpha = self.alpha / self.n
+        for i in range(self.n):
+            scale += norm_alpha * input_sqr[:, i:i+ch, :, :]
+        scale = scale ** self.beta
+        print("---------------------------------------"+str(X / scale)+"-------------------------------------")
+        return X / scale
+        
     def get_output(self, train):
         X = self.get_input(train)
         input_dim = X.shape
@@ -31,10 +51,11 @@ class LRN2D(Layer):
         for i in range(self.n):
             scale += norm_alpha * input_sqr[:, i:i+ch, :, :]
         scale = scale ** self.beta
+        print("---------------------------------------"+str(X / scale)+"-------------------------------------")
         return X / scale
 
     def get_config(self):
-        return {"name":self.__class__.__name__,
+        return {
             "alpha":self.alpha,
             "k":self.k,
             "beta":self.beta,
